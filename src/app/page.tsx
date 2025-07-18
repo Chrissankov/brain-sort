@@ -79,11 +79,11 @@ export default function HomePage() {
         {/* 🔄 Firebase connection status messages */}
         {firebaseStatus === "loading" && (
           <div className="text-yellow-400 text-base font-medium">
-            🔄 Connecting to Firebase...
+            🔄 Connecting to Server...
             {/* ⏳ Additional feedback if it's taking longer */}
             {timeoutReached && (
               <div className="text-slate-400 mt-2">
-                ⏳ Taking longer than usual. Check your internet or Firebase
+                ⏳ Taking longer than usual. Check your internet or Server
                 config.
               </div>
             )}
@@ -92,13 +92,13 @@ export default function HomePage() {
 
         {firebaseStatus === "success" && (
           <div className="text-green-400 text-base font-medium">
-            ✅ Firebase connected successfully!
+            ✅ Server connected successfully!
           </div>
         )}
 
         {firebaseStatus === "error" && (
           <div className="text-red-400 text-base font-medium">
-            ❌ Firebase failed to connect. Please check your config.
+            ❌ Server failed to connect. Please check your config.
           </div>
         )}
 

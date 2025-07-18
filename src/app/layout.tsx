@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
   // Icon settings, used as the favicon for the site
   icons: {
-    icon: "/CircledBrainSortLogo.webp",
+    icon: "./favicon.webp?v=3",
   },
 };
 
