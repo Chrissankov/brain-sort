@@ -18,6 +18,7 @@ import { auth } from "../../../lib/firebase";
 
 // Next.js router for client-side navigation (without full page reload)
 import { useRouter } from "next/navigation";
+import { FirebaseError } from "firebase/app";
 
 // Define the expected structure of the form data
 type FormData = {
@@ -29,6 +30,8 @@ type FormData = {
 export default function AuthPage() {
   // Initialize Next.js router for navigation after login/signup
   const router = useRouter();
+
+  const [authError, setAuthError] = useState(""); // 🔁 Holds error from Firebase if signup/login fails
 
   // State to toggle between Login (true) and Sign Up (false)
   const [isLogin, setIsLogin] = useState(true);
@@ -67,12 +70,21 @@ export default function AuthPage() {
         // Redirect to main app after successful signup
         router.push("/brain");
       }
-    } catch (error) {
-      // Log any errors for debugging
-      if (error instanceof Error) {
-        console.error("Auth Error:", error.message);
+    } catch (error: unknown) {
+      if (error instanceof FirebaseError) {
+        switch (error.code) {
+          case "auth/email-already-in-use":
+            setAuthError("Email is already in use. Please try logging in.");
+            break;
+          case "auth/invalid-credential":
+            setAuthError(
+              "Invalid credentials. Please check your email or password."
+            );
+            break;
+        }
       } else {
-        console.error("Auth Error:", error);
+        console.error("Non-Firebase error:", error);
+        setAuthError("An unexpected error occurred.");
       }
     }
   };
@@ -95,7 +107,10 @@ export default function AuthPage() {
         {/* Toggle buttons for switching between Login and Sign Up */}
         <div className="flex justify-center gap-4 mb-8">
           <button
-            onClick={() => setIsLogin(true)} // Switch to Login mode
+            onClick={() => {
+              setIsLogin(true); // Switch to Login mode
+              setAuthError(""); // Clear any error on switch
+            }}
             className={`text-lg font-semibold transition ${
               isLogin
                 ? "text-sky-600 border-b-2  border-sky-600" // Active styling
@@ -139,6 +154,10 @@ export default function AuthPage() {
               <p className="text-red-500 text-sm mt-1">
                 {errors.email.message}
               </p>
+            )}
+
+            {authError && (
+              <p className="text-red-500 text-sm mt-1">{authError}</p>
             )}
           </div>
 
