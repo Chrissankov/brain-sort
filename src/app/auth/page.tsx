@@ -5,7 +5,7 @@
 import { useState } from "react";
 
 // react-hook-form library for easy form state management and validation
-import { useForm } from "react-hook-form";
+import { SubmitHandler, useForm } from "react-hook-form";
 
 // Firebase Authentication functions for login and signup
 import {
@@ -42,49 +42,55 @@ export default function AuthPage() {
     handleSubmit, // Handles form submission
     watch, // Watches input values in real time
     formState: { errors }, // Holds form validation errors
+    setError, // ✅ Allows us to manually trigger an error for specific fields
   } = useForm<FormData>();
 
   // Watch password field value to validate confirmPassword matches
   const watchPassword = watch("password", "");
 
-  // Form submission handler (login or signup)
-  const onSubmit = async (data: FormData) => {
-    const { email, password, confirmPassword } = data;
+  // ✅ Handle form submission for both login and sign-up
+  const onSubmit: SubmitHandler<FormData> = async ({ email, password }) => {
+    // 🧼 Reset any previous general auth errors before submitting
+    setAuthError("");
 
     try {
       if (isLogin) {
-        // Login with email and password using Firebase Auth
+        // 🔐 If user is logging in, attempt to sign in using Firebase
         await signInWithEmailAndPassword(auth, email, password);
-
-        // Redirect to the main app page on successful login
-        router.push("/brain");
       } else {
-        // Additional password confirmation check before signup
-        if (password !== confirmPassword) {
-          return; // Abort if passwords do not match
-        }
-
-        // Create new user account with email and password
+        // 🆕 If user is signing up, attempt to create a new Firebase user
         await createUserWithEmailAndPassword(auth, email, password);
-
-        // Redirect to main app after successful signup
-        router.push("/brain");
       }
-    } catch (error: unknown) {
+
+      // ✅ If login/signup succeeds, redirect to the /brain page
+      router.push("/brain");
+    } catch (error) {
+      // 🔍 Check if the error is a Firebase-specific error
       if (error instanceof FirebaseError) {
         switch (error.code) {
           case "auth/email-already-in-use":
-            setAuthError("Email is already in use. Please try logging in.");
+            // 🔴 Email already exists → attach error directly to email field
+            setError("email", {
+              type: "manual", // ✅ Manual error set by us (not by built-in validators)
+              message: "Email is already in use. Please try logging in.",
+            });
             break;
+
           case "auth/invalid-credential":
-            setAuthError(
-              "Invalid credentials. Please check your email or password."
-            );
+            // ❌ Invalid credentials (email or password wrong)
+            setError("password", {
+              type: "manual",
+              message: "Invalid email or password.",
+            });
             break;
+
+          default:
+            // ⚠️ For any other Firebase errors, show a general error
+            setAuthError("Authentication error occurred. Please try again.");
         }
       } else {
-        console.error("Non-Firebase error:", error);
-        setAuthError("An unexpected error occurred.");
+        // 🐞 If the error is not from Firebase, display a fallback error
+        setAuthError("Something went wrong. Please try again.");
       }
     }
   };

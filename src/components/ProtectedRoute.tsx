@@ -45,7 +45,17 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   // While checking authentication, show a loading message to the user
   if (loading)
-    return <p className="text-center mt-20">Checking authentication...</p>;
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        {/* 🌀 Beautiful custom animated loader */}
+        <div className="loader"></div>
+
+        {/* 💬 Helpful text below */}
+        <p className="mt-6 text-lg text-gray-600 animate-pulse">
+          Checking authentication...
+        </p>
+      </div>
+    );
 
   // Once authenticated, render the protected children components
   return <>{children}</>;
