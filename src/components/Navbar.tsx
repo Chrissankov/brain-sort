@@ -45,7 +45,7 @@ export default function Navbar() {
         {/* 🚪 Logout Button Section */}
         <button
           onClick={handleLogout} // Trigger logout on click
-          className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full shadow-sm transition duration-200 ease-in-out active:scale-95"
+          className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-full shadow-sm transition duration-200 ease-in-out active:scale-95"
         >
           {/* Logout icon from Lucide */}
           <LogOut size={18} />

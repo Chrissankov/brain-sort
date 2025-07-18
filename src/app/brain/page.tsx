@@ -1,6 +1,7 @@
 // 📦 Import the global Navbar component
 import HeroSection from "@/components/Hero";
 import Navbar from "@/components/Navbar";
+import ClaritySection from "@/components/ClaritySection";
 
 // 🔐 Import the ProtectedRoute wrapper to restrict access to authenticated users
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -13,6 +14,7 @@ export default function BrainPage() {
       <main className="w-full min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white">
         <Navbar />
         <HeroSection />
+        <ClaritySection />
       </main>
     </ProtectedRoute>
   );

@@ -1,4 +1,5 @@
 // Import global CSS styles that apply across the entire app
+import { AuthProviderWrapper } from "./AuthProviderWrapper";
 import "./globals.css";
 
 // Import the Metadata type from Next.js for type safety
@@ -31,7 +32,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         {/* Render the nested components/pages inside the <body> */}
-        {children}
+        <AuthProviderWrapper>{children}</AuthProviderWrapper>
       </body>
     </html>
   );

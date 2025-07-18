@@ -48,7 +48,7 @@ export default function HomePage() {
         clearTimeout(timeout);
       } catch (error) {
         // ❌ Log the error (helps identify issues in config/network)
-        console.error("❌ Firebase test failed:", error);
+        console.error("❌ Server test failed:", error);
 
         // ❌ Update state to reflect failed connection
         setFirebaseStatus("error");
