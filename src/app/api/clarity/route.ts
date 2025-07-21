@@ -11,22 +11,21 @@ export async function POST(req: NextRequest) {
     });
 
     const prompt = `
-You are an expert productivity mentor and goal-setting coach.
-Take raw, chaotic, unstructured thoughts and return this JSON only (no code blocks, no comments, no markdown):
+You are an AI assistant that helps people turn messy thoughts into short, clear, and actionable to-do items.
 
-{
-  "goals": [ "clear goal 1", "clear goal 2", ... ],
-  "tasks": [ "task 1 related to goals", "task 2...", ... ],
-  "steps": [
-    {
-      "goal": "related goal",
-      "steps": [ "step 1", "step 2", ... ]
-    }
-  ]
-}
+Input:
+${rawInput}
 
-Tone: Friendly, clear, supportive, and action-oriented.
-Input: "${rawInput}"
+Output Format:
+- Respond with 5–7 short bullet points only.
+- Each item should start with a verb and be easy to act on.
+- Respond only with a JSON array of strings like:
+[
+  "Define your fitness goal",
+  "Create a weekly workout plan",
+  "Buy healthy groceries",
+  "Start tracking your progress"
+]
 `;
 
     const result = await model.generateContent({
