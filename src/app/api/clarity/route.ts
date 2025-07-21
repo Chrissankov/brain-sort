@@ -1,15 +1,18 @@
 // app/api/clarity/route.ts
-import { NextRequest, NextResponse } from "next/server";
-import genAI from "../../../../lib/gemini";
+
+import { NextRequest, NextResponse } from "next/server"; // Server functions
+import genAI from "../../../../lib/gemini"; // Gemini client (set up separately in /lib)
 
 export async function POST(req: NextRequest) {
   try {
-    const { rawInput } = await req.json();
+    const { rawInput } = await req.json(); // Get user input from body
 
+    // Set up Gemini model
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.5-flash", // Lightweight, fast model
     });
 
+    // 🧠 Prompt engineering: instruct Gemini how to respond
     const prompt = `
 You are an AI assistant that helps people turn messy thoughts into short, clear, and actionable to-do items.
 
@@ -28,21 +31,23 @@ Output Format:
 ]
 `;
 
+    // Send the structured prompt to Gemini
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
     });
 
     const response = result.response;
-    const rawText = response.text();
+    const rawText = response.text(); // Extract raw string response
 
+    // ✂️ Clean and parse the AI response
     const cleaned = (await rawText)
-      .replace(/```json|```/g, "") // remove code block tags
-      .replace(/\/\/.*$/gm, "") // remove comments if any
-      .replace(/,\s*([}\]])/g, "$1"); // remove trailing commas
+      .replace(/```json|```/g, "") // Remove markdown JSON code blocks
+      .replace(/\/\/.*$/gm, "") // Remove comments
+      .replace(/,\s*([}\]])/g, "$1"); // Remove trailing commas
 
-    const parsed = JSON.parse(cleaned);
+    const parsed = JSON.parse(cleaned); // Convert string to JSON array
 
-    return NextResponse.json({ output: parsed });
+    return NextResponse.json({ output: parsed }); // ✅ Return as JSON
   } catch (error: unknown) {
     console.error("Error in Gemini route:", error);
 
