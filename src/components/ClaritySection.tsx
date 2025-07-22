@@ -1,40 +1,46 @@
-"use client";
+"use client"; // This component runs on the client side (needed for hooks and interactivity)
 
-import { useState, useEffect } from "react";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { CheckCircle2, Circle, Loader2 } from "lucide-react";
-import { db } from "../../lib/firebase"; // Your Firebase config
-import { doc, setDoc, getDoc, deleteDoc } from "firebase/firestore"; // Firestore methods
-import { useAuth } from "@/context/AuthContext"; // Your auth context to get currentUser
+import { useState, useEffect } from "react"; // React hooks for state and lifecycle
+import { Textarea } from "@/components/ui/textarea"; // Custom textarea UI component
+import { Button } from "@/components/ui/button"; // Custom button UI component
+import { CheckCircle2, Circle, Loader2 } from "lucide-react"; // Icons for UI feedback
+import { db } from "../../lib/firebase"; // Your Firebase Firestore config
+import { doc, setDoc, getDoc, deleteDoc } from "firebase/firestore"; // Firestore functions
+import { useAuth } from "@/context/AuthContext"; // Hook to get current authenticated user
 
-// Define Task type with text and done boolean
+// Define the shape of each task in the checklist
 interface Task {
-  text: string;
-  done: boolean;
+  text: string; // The task text
+  done: boolean; // Whether task is completed or not
 }
 
 export default function ClaritySection() {
-  // Raw user input string
+  // User’s raw input from textarea (messy thoughts)
   const [rawInput, setRawInput] = useState("");
-  // Loading state while fetching AI output or saving/loading checklist
+
+  // Loading indicator when waiting for AI or Firestore response
   const [isLoading, setIsLoading] = useState(false);
-  // Array of tasks with done state
+
+  // The array of tasks generated from AI or loaded from Firestore
   const [output, setOutput] = useState<Task[]>([]);
-  // Error message string for UI feedback
+
+  // Error message string to show user feedback on failure
   const [error, setError] = useState("");
-  // Current logged-in user info from context
+
+  // Get the currently logged-in Firebase user from context
   const { currentUser } = useAuth();
 
-  // Load saved checklist from Firestore when user logs in / component mounts
+  // Load the saved checklist from Firestore when user logs in or component mounts
   useEffect(() => {
     async function loadChecklist() {
-      if (!currentUser) return; // no user, no loading
+      if (!currentUser) return; // If no user logged in, skip loading
 
       try {
+        // Reference to Firestore doc for this user's checklist
         const docRef = doc(db, "clarityChecklists", currentUser.uid);
         const docSnap = await getDoc(docRef);
 
+        // If doc exists, set the checklist state to the saved tasks
         if (docSnap.exists()) {
           const savedChecklist = docSnap.data().checklist as Task[];
           setOutput(savedChecklist);
@@ -45,18 +51,18 @@ export default function ClaritySection() {
       }
     }
 
-    loadChecklist();
-  }, [currentUser]);
+    loadChecklist(); // Trigger loading checklist
+  }, [currentUser]); // Runs when currentUser changes (login/logout)
 
-  // Save checklist to Firestore for current user
+  // Save the given checklist array to Firestore under the current user's doc
   const saveChecklist = async (checklist: Task[]) => {
-    if (!currentUser) return;
+    if (!currentUser) return; // Skip if no user
 
     try {
       const docRef = doc(db, "clarityChecklists", currentUser.uid);
       await setDoc(docRef, {
-        checklist,
-        timestamp: Date.now(),
+        checklist, // Save the checklist array
+        timestamp: Date.now(), // Save current timestamp for reference
       });
     } catch (err) {
       console.error("Error saving checklist to Firestore:", err);
@@ -64,15 +70,17 @@ export default function ClaritySection() {
     }
   };
 
-  // Send raw input to backend → get AI-generated checklist tasks
+  // Called when user clicks "Generate Clarity"
+  // Sends rawInput to backend API to get AI-generated to-do list
   const handleGenerate = async () => {
-    if (!rawInput.trim()) return; // Prevent empty input submission
+    if (!rawInput.trim()) return; // Prevent empty submissions
 
-    setIsLoading(true);
-    setError("");
-    setOutput([]); // Clear current output while generating
+    setIsLoading(true); // Show loading spinner
+    setError(""); // Clear previous errors
+    setOutput([]); // Clear previous tasks
 
     try {
+      // Call your API endpoint with POST and JSON body containing rawInput
       const response = await fetch("/api/clarity", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -83,43 +91,46 @@ export default function ClaritySection() {
 
       const data = await response.json();
 
-      // data.output is expected to be an array of strings (tasks)
+      // Expecting an array of strings in data.output or data.output.checklist
       const checklistArray: string[] = Array.isArray(data.output)
         ? data.output
         : data.output?.checklist;
 
+      // If no valid checklist received, show error and stop
       if (!checklistArray || checklistArray.length === 0) {
         setError("No checklist returned from AI.");
         setIsLoading(false);
         return;
       }
 
-      // Convert array of strings to array of Tasks with done=false
+      // Convert string array to Task objects with done=false initially
       const newChecklist: Task[] = checklistArray.map((task) => ({
         text: task,
         done: false,
       }));
 
-      setOutput(newChecklist); // Show new checklist
+      setOutput(newChecklist); // Display tasks in UI
       setRawInput(""); // Clear input box
       await saveChecklist(newChecklist); // Save to Firestore
     } catch (err) {
       console.error(err);
       setError("Something went wrong while generating your checklist.");
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Hide loading spinner
     }
   };
 
-  // Toggle task done/undone and save immediately
+  // Toggle completion status of a task when clicked and save updated list
   const toggleDone = async (index: number) => {
+    // Copy output array to avoid direct mutation
     const updated = [...output];
-    updated[index].done = !updated[index].done;
-    setOutput(updated);
+    updated[index].done = !updated[index].done; // Flip done status
+    setOutput(updated); // Update state immediately for UI responsiveness
 
     if (currentUser) {
       try {
         const docRef = doc(db, "clarityChecklists", currentUser.uid);
+        // Save updated checklist to Firestore with timestamp
         await setDoc(docRef, {
           checklist: updated,
           timestamp: Date.now(),
@@ -131,38 +142,43 @@ export default function ClaritySection() {
     }
   };
 
-  // Reset checklist in UI and Firestore
+  // Reset the checklist: clear UI and delete from Firestore
   const handleReset = async () => {
-    setOutput([]); // Clear UI list
-    setError("");
+    setOutput([]); // Clear tasks in UI
+    setError(""); // Clear errors
+
     if (currentUser) {
       console.log("Saving for user:", currentUser.uid);
+
       const docRef = doc(db, "clarityChecklists", currentUser.uid);
+
+      // Overwrite with empty checklist first (optional but good practice)
       await setDoc(docRef, {
         checklist: [],
         timestamp: Date.now(),
       });
+
+      try {
+        // Delete the document completely from Firestore
+        await deleteDoc(docRef);
+      } catch (err) {
+        console.error("Error deleting checklist:", err);
+        setError("Failed to reset checklist.");
+      }
     } else {
       console.log("No user logged in. Skipping save.");
       return;
     }
-
-    try {
-      const docRef = doc(db, "clarityChecklists", currentUser.uid);
-      await deleteDoc(docRef); // Remove from Firestore
-    } catch (err) {
-      console.error("Error deleting checklist:", err);
-      setError("Failed to reset checklist.");
-    }
   };
 
+  // UI JSX render starts here
   return (
     <section
       id="clarity"
       className="w-full px-6 md:px-20 py-20 text-white bg-gradient-to-b from-slate-900 to-slate-1500"
     >
       <div className="max-w-4xl mx-auto flex flex-col gap-6 items-center">
-        {/* Title */}
+        {/* Main title */}
         <h2 className="text-4xl md:text-5xl font-bold text-center">
           Turn Thoughts into Clarity 🧠
         </h2>
@@ -173,7 +189,7 @@ export default function ClaritySection() {
           powerful, actionable to-do list.
         </p>
 
-        {/* Input textarea */}
+        {/* Textarea input bound to rawInput state */}
         <Textarea
           placeholder="I want to start a business but I feel overwhelmed..."
           value={rawInput}
@@ -184,7 +200,7 @@ export default function ClaritySection() {
 
         {/* Buttons container */}
         <div className="flex gap-3 mb-6">
-          {/* Generate Button */}
+          {/* Generate button: disabled if loading or no input */}
           <Button
             onClick={handleGenerate}
             disabled={isLoading || !rawInput.trim()}
@@ -199,7 +215,7 @@ export default function ClaritySection() {
             )}
           </Button>
 
-          {/* Reset Button - only show if output exists */}
+          {/* Reset button only shown if there is an output */}
           {output.length > 0 && (
             <Button variant="secondary" onClick={handleReset}>
               Reset List
@@ -208,12 +224,14 @@ export default function ClaritySection() {
         </div>
       </div>
 
-      {/* Display checklist if exists */}
+      {/* Show checklist tasks if any exist */}
       {output.length > 0 && (
         <div className="mt-10 w-full max-w-3xl mx-auto bg-slate-800/80 p-6 rounded-xl border border-gray-700 shadow-xl">
           <h3 className="text-2xl font-semibold mb-4 text-center text-indigo-300">
             Your To-Do List ✅
           </h3>
+
+          {/* List tasks */}
           <ul className="space-y-3">
             {output.map((task, index) => (
               <li
@@ -223,9 +241,10 @@ export default function ClaritySection() {
                     ? "bg-green-200 line-through text-green-700"
                     : "bg-gray-50 text-gray-900"
                 }`}
-                onClick={() => toggleDone(index)} // Toggle on entire list item click
+                onClick={() => toggleDone(index)} // Clicking toggles done state
               >
                 <span>{task.text}</span>
+                {/* Show check icon if done, else empty circle */}
                 {task.done ? (
                   <CheckCircle2 className="text-green-700 w-6 h-6" />
                 ) : (
@@ -237,7 +256,7 @@ export default function ClaritySection() {
         </div>
       )}
 
-      {/* Display error message */}
+      {/* Show error message if exists */}
       {error && <p className="text-red-400 text-center mt-4">{error}</p>}
     </section>
   );

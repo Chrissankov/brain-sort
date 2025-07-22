@@ -1,38 +1,44 @@
 // Import global CSS styles that apply across the entire app
-import { AuthProvider } from "../context/AuthContext";
-import "./globals.css";
+import { AuthProvider } from "../context/AuthContext"; // Provides authentication context to the app
+import "./globals.css"; // Global CSS file imported once here, affects whole app
 
-// Import the Metadata type from Next.js for type safety
+// Import the Metadata type from Next.js for typing the metadata object
 import { Metadata } from "next";
 
-// 🧠 Default metadata for all pages
-// This metadata is used by Next.js to populate the <head> section of every page
+//  Default metadata for all pages in the app
+// This will be used to fill in the <head> section of every page automatically
 export const metadata: Metadata = {
-  // The default title of the application, shown in the browser tab
+  // The default title shown in the browser tab for all pages
   title: "BrainSort",
 
-  // A short description of the app, useful for SEO and social sharing
+  // A short description of the app — helps SEO and social media previews
   description: "Turn your chaotic thoughts into structured goals.",
 
-  // Icon settings, used as the favicon for the site
+  // Favicon setup — the icon shown in the browser tab
   icons: {
-    icon: "./favicon.webp?v=3",
+    icon: "./favicon.webp?v=3", // Path to your favicon image
   },
 };
 
-// The root layout component that wraps all pages in the application
-// This is a special Next.js component used to define HTML structure
+// The root layout component wraps every page in your app
+// This is part of Next.js 13’s App Router feature, which supports layouts
 export default function RootLayout({
-  children, // `children` is the nested content (i.e., the page or other layouts/components)
+  children, // `children` represent the nested content (pages, other layouts, components)
 }: {
-  children: React.ReactNode; // Type definition for `children` to ensure type safety
+  children: React.ReactNode; // TypeScript type: children can be any React nodes
 }) {
   return (
-    // The root HTML tag with the language set to English
+    // The root HTML element, setting the language to English for accessibility and SEO
     <html lang="en">
+      {/* The body of the page */}
       <body>
-        {/* Render the nested components/pages inside the <body> */}
-        <AuthProvider> {children}</AuthProvider>
+        {/* 
+          Wrap the entire app inside AuthProvider context so that any component
+          can access authentication state and functions via React Context API 
+        */}
+        <AuthProvider>
+          {children} {/* Render the page or nested layouts/components here */}
+        </AuthProvider>
       </body>
     </html>
   );
